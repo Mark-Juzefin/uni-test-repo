@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./psql:/var/lib/postgresql/data
+      - psql_data:/var/lib/postgresql/data
 
   prometheus:
     image: prom/prometheus
@@ -18,21 +18,21 @@ services:
     ports:
       - 9090:9090
 
-  localstack:
-    container_name: localstack
-    image: localstack/localstack:latest
-    ports:
-      - "4566:4566"
-    environment:
-      - SERVICES=sqs,s3
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - AWS_DEFAULT_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-    volumes:
-      - "./init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+  # LocalStack disabled until SQS integration. Re-enable when wiring notifications service.
+  # Pin to community version (e.g. localstack/localstack:3.8) — :latest now requires auth token.
+  # localstack:
+  #   container_name: localstack
+  #   image: localstack/localstack:3.8
+  #   ports:
+  #     - "4566:4566"
+  #   environment:
+  #     - SERVICES=sqs
+  #     - AWS_DEFAULT_REGION=us-east-1
+  #     - AWS_ACCESS_KEY_ID=test
+  #     - AWS_SECRET_ACCESS_KEY=test
+  #   volumes:
+  #     - "./init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
+  #     - localstack_data:/var/lib/localstack
 
 volumes:
-  psql:
+  psql_data:
