@@ -1,0 +1,19 @@
+@base = http://localhost:3000
+
+### Create product
+POST {{base}}/products
+Content-Type: application/json
+
+{
+  "name": "T-shirt",
+  "description": "black cotton",
+  "price": 1999
+}
+
+### Invalid (missing name)
+POST {{base}}/products
+Content-Type: application/json
+
+{
+  "price": 100
+}
