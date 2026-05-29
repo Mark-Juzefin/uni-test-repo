@@ -4,8 +4,8 @@
 - [x] Outbox table + write event row in the SAME tx as product create/delete
 - [x] Publisher interface + LogPublisher stub (worker has no real queue yet)
 - [x] Outbox worker: poll unpublished rows → Publisher.Publish → set published_at
-- [ ] Queue (SQS via LocalStack, pin `localstack/localstack:3.8`) + real SQSPublisher
-- [ ] Notifications service: consume from queue, log messages
+- [x] Broker: Kafka (Redpanda in docker, `localhost:19092`) + KafkaPublisher
+- [ ] Notifications service: consume from `product-events` topic, log messages
 
 ## Required by task
 - [ ] Unit tests: create / list / delete

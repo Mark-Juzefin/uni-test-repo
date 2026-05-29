@@ -15,6 +15,9 @@ type Config struct {
 
 	OutboxPollInterval time.Duration `env:"OUTBOX_POLL_INTERVAL" envDefault:"2s"`
 	OutboxBatchSize    int           `env:"OUTBOX_BATCH_SIZE" envDefault:"100"`
+
+	KafkaBrokers []string `env:"KAFKA_BROKERS" envSeparator:"," envDefault:"localhost:19092"`
+	KafkaTopic   string   `env:"KAFKA_TOPIC" envDefault:"product-events"`
 }
 
 func New() (Config, error) {

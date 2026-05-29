@@ -20,13 +20,13 @@ const (
 )
 
 type Event struct {
-	ID            uuid.UUID
-	AggregateType AggregateType
-	AggregateID   uuid.UUID
-	EventType     EventType
-	Payload       json.RawMessage
-	CreatedAt     time.Time
-	PublishedAt   *time.Time
+	ID            uuid.UUID       `json:"id"`
+	AggregateType AggregateType   `json:"aggregate_type"`
+	AggregateID   uuid.UUID       `json:"aggregate_id"`
+	EventType     EventType       `json:"event_type"`
+	Payload       json.RawMessage `json:"payload"`
+	CreatedAt     time.Time       `json:"created_at"`
+	PublishedAt   *time.Time      `json:"published_at,omitempty"`
 }
 
 type Store interface {

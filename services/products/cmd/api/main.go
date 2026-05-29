@@ -12,5 +12,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("Config error: %s", err)
 	}
-	products.Run(cfg)
+	products.RunAPI(cfg)
 }
