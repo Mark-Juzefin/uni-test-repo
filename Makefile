@@ -1,7 +1,7 @@
 -include .env
 export
 
-.PHONY: up down run run-worker run-notifications test seed
+.PHONY: up down run run-worker run-notifications run-all test seed
 
 up:
 	docker compose up -d --wait
@@ -17,6 +17,10 @@ run-worker:
 
 run-notifications:
 	go run ./services/notifications/cmd
+
+# Bring up infra, then run all three services together (logs prefixed per process).
+run-all: up
+	go run github.com/mattn/goreman@latest start
 
 test:
 	go test -race ./...

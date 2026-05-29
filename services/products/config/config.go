@@ -8,7 +8,7 @@ import (
 
 // Config holds Products service configuration.
 type Config struct {
-	Port      int    `env:"PORT" envDefault:"3000"`
+	Port      int    `env:"HTTP_PORT" envDefault:"3000"`
 	PgURL     string `env:"PG_URL" required:"true"`
 	PgPoolMax int    `env:"PG_POOL_MAX" envDefault:"10"`
 	LogLevel  string `env:"LOG_LEVEL" envDefault:"info"`

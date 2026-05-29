@@ -8,8 +8,8 @@
 - [x] Notifications service: consume from `product-events` topic, log messages
 
 ## Required by task
-- [ ] Unit tests: create / list / delete
-- [ ] README with run instructions
+- [x] Unit tests: create / list / delete
+- [x] README with run instructions
 
 ## Bonus
 - [ ] Prometheus metrics on create/delete
