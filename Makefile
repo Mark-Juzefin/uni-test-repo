@@ -1,7 +1,7 @@
 -include .env
 export
 
-.PHONY: up down run run-worker test seed
+.PHONY: up down run run-worker run-notifications test seed
 
 up:
 	docker compose up -d --wait
@@ -14,6 +14,9 @@ run:
 
 run-worker:
 	go run ./services/products/cmd/worker
+
+run-notifications:
+	go run ./services/notifications/cmd
 
 test:
 	go test -race ./...

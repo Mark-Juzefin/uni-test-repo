@@ -11,6 +11,7 @@ pkg/                postgres (pgxpool+Squirrel), logger (slog), migrations (goos
 services/products/  cmd/{api,worker}, app.go (RunAPI/RunWorker), router, config, migrations
   internal/product/ entity, interfaces, service, errors, productrepo (pg), productcontroller (http)
   internal/outbox/  Event entity, pg store, Kafka publisher, polling worker (FOR UPDATE SKIP LOCKED)
+services/notifications/  cmd, app.go, config; internal/{consumer (kafka.Reader), event} — logs product-events
 ```
 
 Layers: controller (HTTP, errors→status) → service (logic) → repo (interface in domain, pg impl).
@@ -18,7 +19,7 @@ Layers: controller (HTTP, errors→status) → service (logic) → repo (interfa
 ## Commands
 
 ```bash
-make up / down / run / run-worker / test   # run=API, run-worker=outbox→Kafka relay
+make up / down / run / run-worker / run-notifications / test   # API · outbox→Kafka relay · Kafka consumer
 make seed [n=50]   # sample products for pagination
 ```
 

@@ -5,7 +5,7 @@
 - [x] Publisher interface + LogPublisher stub (worker has no real queue yet)
 - [x] Outbox worker: poll unpublished rows → Publisher.Publish → set published_at
 - [x] Broker: Kafka (Redpanda in docker, `localhost:19092`) + KafkaPublisher
-- [ ] Notifications service: consume from `product-events` topic, log messages
+- [x] Notifications service: consume from `product-events` topic, log messages
 
 ## Required by task
 - [ ] Unit tests: create / list / delete
