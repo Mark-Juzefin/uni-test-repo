@@ -44,14 +44,22 @@ func Run(cfg config.Config) {
 		os.Exit(1)
 	}
 
+	txOutbox := outbox.TxStoreFactory(pg.Builder)
+
 	productRepo := productrepo.New(pg)
 	productService := product.NewProductService(
 		productRepo,
 		pg,
 		productrepo.TxRepoFactory(pg.Builder),
-		outbox.TxStoreFactory(pg.Builder),
+		txOutbox,
 	)
 	productH := productcontroller.NewHTTPHandler(productService)
+
+	outboxWorker := outbox.NewWorker(pg, txOutbox, outbox.LogPublisher{}, outbox.WorkerConfig{
+		PollInterval: cfg.OutboxPollInterval,
+		BatchSize:    cfg.OutboxBatchSize,
+	})
+	go outboxWorker.Start(ctx)
 
 	engine := NewGinEngine()
 	router := NewRouter(productH)

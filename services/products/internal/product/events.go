@@ -10,13 +10,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// productDeletedPayload is the body of a product.deleted event — just the id.
 type productDeletedPayload struct {
 	ID uuid.UUID `json:"id"`
 }
 
-// newOutboxEvent builds an outbox row for a product change. The payload is
-// whatever the caller marshals (the full product on create, the id on delete).
 func newOutboxEvent(eventType outbox.EventType, aggregateID uuid.UUID, payload any) (outbox.Event, error) {
 	data, err := json.Marshal(payload)
 	if err != nil {

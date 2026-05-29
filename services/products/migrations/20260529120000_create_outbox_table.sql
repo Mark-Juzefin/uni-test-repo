@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS "outbox" (
 -- +goose StatementEnd
 
 -- +goose StatementBegin
--- Partial index for the publisher worker: poll oldest-first among unpublished.
 CREATE INDEX IF NOT EXISTS idx_outbox_unpublished
     ON "outbox" (created_at)
     WHERE published_at IS NULL;

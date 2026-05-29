@@ -2,8 +2,8 @@
 
 ## Messaging: outbox → worker → queue → notifications
 - [x] Outbox table + write event row in the SAME tx as product create/delete
-- [ ] Publisher interface + LogPublisher stub (worker has no real queue yet)
-- [ ] Outbox worker: poll unpublished rows → Publisher.Publish → set published_at
+- [x] Publisher interface + LogPublisher stub (worker has no real queue yet)
+- [x] Outbox worker: poll unpublished rows → Publisher.Publish → set published_at
 - [ ] Queue (SQS via LocalStack, pin `localstack/localstack:3.8`) + real SQSPublisher
 - [ ] Notifications service: consume from queue, log messages
 

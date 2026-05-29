@@ -17,13 +17,10 @@ type PgProductRepo struct {
 	builder squirrel.StatementBuilderType
 }
 
-// New returns a pool-bound repo (autocommit), for calls outside a transaction.
 func New(pg *postgres.Postgres) product.ProductRepo {
 	return newRepo(pg.Pool, pg.Builder)
 }
 
-// TxRepoFactory binds a product repo to a caller-supplied Executor (typically a
-// live transaction), so the same repo code runs inside a tx.
 func TxRepoFactory(builder squirrel.StatementBuilderType) func(postgres.Executor) product.ProductRepo {
 	return func(exec postgres.Executor) product.ProductRepo {
 		return newRepo(exec, builder)

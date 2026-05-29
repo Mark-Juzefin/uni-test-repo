@@ -8,12 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// AggregateType identifies the kind of domain object an event is about.
 type AggregateType string
 
 const AggregateProduct AggregateType = "product"
 
-// EventType is the concrete event name.
 type EventType string
 
 const (
@@ -21,8 +19,6 @@ const (
 	EventProductDeleted EventType = "product.deleted"
 )
 
-// Event is one row of the transactional outbox, written in the same transaction
-// as the change that produced it.
 type Event struct {
 	ID            uuid.UUID
 	AggregateType AggregateType
@@ -33,7 +29,12 @@ type Event struct {
 	PublishedAt   *time.Time
 }
 
-// Store persists outbox events.
 type Store interface {
 	Create(ctx context.Context, e Event) error
+	FetchUnpublished(ctx context.Context, limit int) ([]Event, error)
+	MarkPublished(ctx context.Context, ids []uuid.UUID) error
+}
+
+type Publisher interface {
+	Publish(ctx context.Context, e Event) error
 }

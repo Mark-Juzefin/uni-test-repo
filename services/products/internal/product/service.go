@@ -49,9 +49,7 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductRequest) (
 		return Product{}, err
 	}
 
-	// Persist the product and its event atomically: the outbox row commits with
-	// the product or not at all. No single hot row is involved, so ReadCommitted
-	// is enough.
+	// Product and event commit together; no contended row, so ReadCommitted suffices.
 	err = s.transactor.InTransaction(ctx, pgx.ReadCommitted, func(tx postgres.Executor) error {
 		if err := s.txRepo(tx).Create(ctx, p); err != nil {
 			return fmt.Errorf("create product: %w", err)
