@@ -22,3 +22,18 @@ type CreateProductRequest struct {
 	Description string `json:"description" binding:"max=2000"`
 	Price       int64  `json:"price" binding:"required,gte=0"`
 }
+
+// ListProductsRequest carries pagination parameters from the query string.
+// Out-of-range values are not rejected — the service clamps them to sane bounds.
+type ListProductsRequest struct {
+	Limit  int `form:"limit"`
+	Offset int `form:"offset"`
+}
+
+// ListProductsResponse is the paginated output DTO for product listing.
+type ListProductsResponse struct {
+	Items  []Product `json:"items"`
+	Total  int       `json:"total"`
+	Limit  int       `json:"limit"`
+	Offset int       `json:"offset"`
+}

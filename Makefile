@@ -1,7 +1,7 @@
 -include .env
 export
 
-.PHONY: up down run test
+.PHONY: up down run test seed
 
 up:
 	docker compose up -d --wait
@@ -14,3 +14,7 @@ run:
 
 test:
 	go test -race ./...
+
+# Seed sample products to test list pagination. Override count with: make seed n=50
+seed:
+	bash ./scripts/seed.sh $(n)

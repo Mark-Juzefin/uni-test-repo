@@ -16,4 +16,6 @@ func NewRouter(product *productcontroller.HTTPHandler) *Router {
 
 func (r *Router) SetUp(engine *gin.Engine) {
 	engine.POST("/products", r.product.Create)
+	engine.GET("/products", r.product.List)
+	engine.DELETE("/products/:id", r.product.Delete)
 }

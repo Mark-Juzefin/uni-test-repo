@@ -10,6 +10,11 @@ Content-Type: application/json
   "price": 1999
 }
 
+> {%
+    client.global.set("product_id", response.body.id);
+    client.log("Product ID: " + response.body.id);
+%}
+
 ### Invalid (missing name)
 POST {{base}}/products
 Content-Type: application/json
@@ -17,3 +22,12 @@ Content-Type: application/json
 {
   "price": 100
 }
+
+### List products (paginated)
+GET {{base}}/products?limit=5&offset=25
+
+### Delete product (uses id from Create)
+DELETE {{base}}/products/{{product_id}}
+
+### Delete non-existent (expect 404)
+DELETE {{base}}/products/00000000-0000-0000-0000-000000000000
