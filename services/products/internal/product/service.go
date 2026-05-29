@@ -5,15 +5,32 @@ import (
 	"fmt"
 	"time"
 
+	"uni-test-repo/pkg/postgres"
+	"uni-test-repo/services/products/internal/outbox"
+
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type ProductService struct {
-	repo ProductRepo
+	repo       ProductRepo                          // pool-bound, for non-tx reads (List)
+	transactor postgres.Transactor                  // opens transactions
+	txRepo     func(postgres.Executor) ProductRepo  // binds the product repo to a tx
+	txOutbox   func(postgres.Executor) outbox.Store // binds the outbox store to a tx
 }
 
-func NewProductService(repo ProductRepo) *ProductService {
-	return &ProductService{repo: repo}
+func NewProductService(
+	repo ProductRepo,
+	transactor postgres.Transactor,
+	txRepo func(postgres.Executor) ProductRepo,
+	txOutbox func(postgres.Executor) outbox.Store,
+) *ProductService {
+	return &ProductService{
+		repo:       repo,
+		transactor: transactor,
+		txRepo:     txRepo,
+		txOutbox:   txOutbox,
+	}
 }
 
 func (s *ProductService) Create(ctx context.Context, req CreateProductRequest) (Product, error) {
@@ -27,17 +44,44 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductRequest) (
 		UpdatedAt:   now,
 	}
 
-	if err := s.repo.Create(ctx, p); err != nil {
-		return Product{}, fmt.Errorf("create product: %w", err)
+	evt, err := newOutboxEvent(outbox.EventProductCreated, p.ID, p)
+	if err != nil {
+		return Product{}, err
+	}
+
+	// Persist the product and its event atomically: the outbox row commits with
+	// the product or not at all. No single hot row is involved, so ReadCommitted
+	// is enough.
+	err = s.transactor.InTransaction(ctx, pgx.ReadCommitted, func(tx postgres.Executor) error {
+		if err := s.txRepo(tx).Create(ctx, p); err != nil {
+			return fmt.Errorf("create product: %w", err)
+		}
+		if err := s.txOutbox(tx).Create(ctx, evt); err != nil {
+			return fmt.Errorf("write outbox event: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return Product{}, err
 	}
 	return p, nil
 }
 
 func (s *ProductService) Delete(ctx context.Context, id uuid.UUID) error {
-	if err := s.repo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("delete product: %w", err)
+	evt, err := newOutboxEvent(outbox.EventProductDeleted, id, productDeletedPayload{ID: id})
+	if err != nil {
+		return err
 	}
-	return nil
+
+	return s.transactor.InTransaction(ctx, pgx.ReadCommitted, func(tx postgres.Executor) error {
+		if err := s.txRepo(tx).Delete(ctx, id); err != nil {
+			return fmt.Errorf("delete product: %w", err)
+		}
+		if err := s.txOutbox(tx).Create(ctx, evt); err != nil {
+			return fmt.Errorf("write outbox event: %w", err)
+		}
+		return nil
+	})
 }
 
 const (

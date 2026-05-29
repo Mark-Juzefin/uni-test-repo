@@ -14,6 +14,7 @@ import (
 	"uni-test-repo/pkg/migrations"
 	"uni-test-repo/pkg/postgres"
 	"uni-test-repo/services/products/config"
+	"uni-test-repo/services/products/internal/outbox"
 	"uni-test-repo/services/products/internal/product"
 	"uni-test-repo/services/products/internal/product/productcontroller"
 	"uni-test-repo/services/products/internal/product/productrepo"
@@ -44,7 +45,12 @@ func Run(cfg config.Config) {
 	}
 
 	productRepo := productrepo.New(pg)
-	productService := product.NewProductService(productRepo)
+	productService := product.NewProductService(
+		productRepo,
+		pg,
+		productrepo.TxRepoFactory(pg.Builder),
+		outbox.TxStoreFactory(pg.Builder),
+	)
 	productH := productcontroller.NewHTTPHandler(productService)
 
 	engine := NewGinEngine()

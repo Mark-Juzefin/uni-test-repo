@@ -13,15 +13,29 @@ import (
 )
 
 type PgProductRepo struct {
-	pg *postgres.Postgres
+	db      postgres.Executor
+	builder squirrel.StatementBuilderType
 }
 
+// New returns a pool-bound repo (autocommit), for calls outside a transaction.
 func New(pg *postgres.Postgres) product.ProductRepo {
-	return &PgProductRepo{pg: pg}
+	return newRepo(pg.Pool, pg.Builder)
+}
+
+// TxRepoFactory binds a product repo to a caller-supplied Executor (typically a
+// live transaction), so the same repo code runs inside a tx.
+func TxRepoFactory(builder squirrel.StatementBuilderType) func(postgres.Executor) product.ProductRepo {
+	return func(exec postgres.Executor) product.ProductRepo {
+		return newRepo(exec, builder)
+	}
+}
+
+func newRepo(db postgres.Executor, builder squirrel.StatementBuilderType) *PgProductRepo {
+	return &PgProductRepo{db: db, builder: builder}
 }
 
 func (r *PgProductRepo) Create(ctx context.Context, p product.Product) error {
-	query, args, err := r.pg.Builder.Insert("products").
+	query, args, err := r.builder.Insert("products").
 		Columns("id", "name", "description", "price", "created_at", "updated_at").
 		Values(p.ID, p.Name, p.Description, p.Price, p.CreatedAt, p.UpdatedAt).
 		ToSql()
@@ -29,21 +43,21 @@ func (r *PgProductRepo) Create(ctx context.Context, p product.Product) error {
 		return fmt.Errorf("build insert query: %w", err)
 	}
 
-	if _, err := r.pg.Pool.Exec(ctx, query, args...); err != nil {
+	if _, err := r.db.Exec(ctx, query, args...); err != nil {
 		return fmt.Errorf("insert product: %w", err)
 	}
 	return nil
 }
 
 func (r *PgProductRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	query, args, err := r.pg.Builder.Delete("products").
+	query, args, err := r.builder.Delete("products").
 		Where(squirrel.Eq{"id": id}).
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("build delete query: %w", err)
 	}
 
-	tag, err := r.pg.Pool.Exec(ctx, query, args...)
+	tag, err := r.db.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("delete product: %w", err)
 	}
@@ -54,7 +68,7 @@ func (r *PgProductRepo) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *PgProductRepo) List(ctx context.Context, limit, offset int) ([]product.Product, int, error) {
-	query, args, err := r.pg.Builder.
+	query, args, err := r.builder.
 		Select("id", "name", "description", "price", "created_at", "updated_at").
 		From("products").
 		OrderBy("created_at DESC").
@@ -65,7 +79,7 @@ func (r *PgProductRepo) List(ctx context.Context, limit, offset int) ([]product.
 		return nil, 0, fmt.Errorf("build list query: %w", err)
 	}
 
-	rows, err := r.pg.Pool.Query(ctx, query, args...)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("query products: %w", err)
 	}
@@ -76,13 +90,13 @@ func (r *PgProductRepo) List(ctx context.Context, limit, offset int) ([]product.
 		return nil, 0, fmt.Errorf("scan products: %w", err)
 	}
 
-	countQuery, _, err := r.pg.Builder.Select("COUNT(*)").From("products").ToSql()
+	countQuery, _, err := r.builder.Select("COUNT(*)").From("products").ToSql()
 	if err != nil {
 		return nil, 0, fmt.Errorf("build count query: %w", err)
 	}
 
 	var total int
-	if err := r.pg.Pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count products: %w", err)
 	}
 

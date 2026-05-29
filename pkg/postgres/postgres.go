@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -40,4 +42,45 @@ func (p *Postgres) Close() {
 	if p.Pool != nil {
 		p.Pool.Close()
 	}
+}
+
+// Executor is the common subset of *pgxpool.Pool and pgx.Tx. A repository holds
+// an Executor (never a concrete pool or tx), so the same code runs on the pool
+// in autocommit or inside a transaction.
+type Executor interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// Transactor opens a transaction. *Postgres satisfies it automatically, so the
+// domain depends only on this interface, never on *pgxpool.Pool or pgx.Tx.
+type Transactor interface {
+	InTransaction(ctx context.Context, isoLevel pgx.TxIsoLevel, fn func(tx Executor) error) error
+}
+
+// InTransaction runs fn inside a transaction at the given (explicit) isolation
+// level, committing on success and rolling back on any error. The named return
+// drives the deferred rollback: any early return from fn rolls back, while a
+// clean commit leaves err == nil and skips it.
+func (p *Postgres) InTransaction(ctx context.Context, isoLevel pgx.TxIsoLevel, fn func(tx Executor) error) (err error) {
+	tx, err := p.Pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: isoLevel})
+	if err != nil {
+		return fmt.Errorf("start transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx) // rollback iff fn or commit failed
+		}
+	}()
+
+	if err = fn(tx); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
